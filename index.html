@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Sınav Takip" />
+  <title>Sınav Takip</title>
+  <style>
+    :root {
+      --bg: #F2F2F7;
+      --card-bg: #FFFFFF;
+      --card-inner: #F8F9FA;
+      --text: #000000;
+      --text-secondary: #8E8E93;
+      --tint: #007AFF;
+      --tint-pressed: #0056B3;
+      --border: #E5E5EA;
+      --success: #34C759;
+      --danger: #FF3B30;
+      --separator: rgba(60, 60, 67, 0.12);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --card-bg: #1C1C1E;
+        --card-inner: #2C2C2E;
+        --text: #FFFFFF;
+        --text-secondary: #8E8E93;
+        --tint: #0A84FF;
+        --tint-pressed: #409CFF;
+        --border: #38383A;
+        --success: #30D158;
+        --danger: #FF453A;
+        --separator: rgba(84, 84, 88, 0.4);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Montserrat, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: max(16px, env(safe-area-inset-top)) 12px max(20px, env(safe-area-inset-bottom)) 12px;
+      touch-action: manipulation;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      max-width: 375px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Üst Başlık Kartı */
+    .header-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--tint);
+      background: rgba(0, 122, 255, 0.12);
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+
+    .progress-bar-bg {
+      height: 6px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--tint);
+      width: 0%;
+      transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .progress-text {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+      font-weight: 500;
+    }
+
+    /* 5 Günlük Segment Butonları */
+    .days-segment {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      background: var(--card-bg);
+      padding: 4px;
+      border-radius: 14px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .day-tab {
+      border: none;
+      background: transparent;
+      padding: 6px 2px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      min-height: 48px;
+      transition: background-color 0.15s, transform 0.1s;
+    }
+
+    .day-tab:active {
+      transform: scale(0.96);
+    }
+
+    .day-tab .d-name {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .day-tab .d-sub {
+      font-size: 0.68rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      margin-top: 1px;
+    }
+
+    .day-tab.active {
+      background: var(--tint);
+    }
+
+    .day-tab.active .d-name,
+    .day-tab.active .d-sub {
+      color: #FFFFFF;
+    }
+
+    /* Görev Ekleme Alanı */
+    .input-bar {
+      display: flex;
+      gap: 8px;
+    }
+
+    .task-input {
+      flex: 1;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text);
+      padding: 0 14px;
+      font-size: 16px; /* Safari otomatik zoom'unu önler */
+      outline: none;
+      user-select: text;
+    }
+
+    .task-input:focus {
+      border-color: var(--tint);
+    }
+
+    .add-btn {
+      height: 44px;
+      min-width: 44px;
+      padding: 0 16px;
+      border-radius: 12px;
+      background: var(--tint);
+      color: #FFFFFF;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.15s, transform 0.1s;
+    }
+
+    .add-btn:active {
+      transform: scale(0.95);
+      background: var(--tint-pressed);
+    }
+
+    /* Liste */
+    .list-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      min-height: 52px;
+      padding: 8px 12px;
+      border-bottom: 0.5px solid var(--separator);
+      transition: opacity 0.2s;
+    }
+
+    .task-item:last-child {
+      border-bottom: none;
+    }
+
+    .task-item.completed {
+      opacity: 0.5;
+    }
+
+    .tap-target {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      min-height: 44px;
+    }
+
+    .checkbox {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .task-item.completed .checkbox {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .checkbox svg {
+      width: 12px;
+      height: 12px;
+      stroke: #FFFFFF;
+      stroke-width: 3;
+      fill: none;
+      display: none;
+    }
+
+    .task-item.completed .checkbox svg {
+      display: block;
+    }
+
+    .task-text {
+      font-size: 0.95rem;
+      line-height: 1.35;
+      word-break: break-word;
+      user-select: text;
+    }
+
+    .task-item.completed .task-text {
+      text-decoration: line-through;
+      color: var(--text-secondary);
+    }
+
+    .del-btn {
+      width: 44px;
+      height: 44px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      border-radius: 8px;
+    }
+
+    .del-btn:active {
+      color: var(--danger);
+    }
+
+    .empty-state {
+      padding: 36px 16px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-wrapper">
+    <div class="header-card">
+      <div class="header-row">
+        <h1 class="title">Sınav Takip</h1>
+        <span class="badge" id="countdown-badge">Hesaplanıyor</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+      <div class="progress-text">
+        <span>Günün İlerlemesi</span>
+        <span id="progress-val">%0</span>
+      </div>
+    </div>
+
+    <!-- iPhone SE 375px Ekranına Tam Oturan 5 Günlük Segment -->
+    <div class="days-segment" id="days-nav"></div>
+
+    <form class="input-bar" id="add-form" onsubmit="event.preventDefault(); addTask();">
+      <input
+        type="text"
+        id="task-input"
+        class="task-input"
+        placeholder="Bu güne görev ekle..."
+        autocomplete="off"
+        autocorrect="off"
+      />
+      <button type="submit" class="add-btn">Ekle</button>
+    </form>
+
+    <div class="list-card">
+      <div id="task-list"></div>
+      <div id="empty-state" class="empty-state" style="display: none;">
+        Bu gün için henüz görev eklenmedi.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DAYS = [
+      { id: "2026-09-30", name: "Çrş", sub: "30 Eyl" },
+      { id: "2026-10-01", name: "Prş", sub: "1 Eki" },
+      { id: "2026-10-02", name: "Cum", sub: "2 Eki" },
+      { id: "2026-10-03", name: "Cmt", sub: "3 Eki" },
+      { id: "2026-10-04", name: "Paz", sub: "Sınav" }
+    ];
+
+    const STORAGE_KEY = "exam_se3_todo_data";
+    let activeDay = "2026-09-30";
+
+    function getData() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : {};
+    }
+
+    function saveData(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function initCountdown() {
+      const examDate = new Date(2026, 9, 4, 10, 0);
+      const now = new Date();
+      const diffDays = Math.ceil((examDate - now) / (1000 * 60 * 60 * 24));
+      const badge = document.getElementById("countdown-badge");
+
+      if (diffDays > 0) {
+        badge.textContent = `Son ${diffDays} gün`;
+      } else if (diffDays === 0) {
+        badge.textContent = "Bugün Sınav!";
+      } else {
+        badge.textContent = "Sınav Bitti";
+      }
+    }
+
+    function renderNav() {
+      const nav = document.getElementById("days-nav");
+      nav.innerHTML = "";
+      DAYS.forEach(day => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `day-tab ${day.id === activeDay ? "active" : ""}`;
+        btn.innerHTML = `<span class="d-name">${day.name}</span><span class="d-sub">${day.sub}</span>`;
+        btn.onclick = () => {
+          activeDay = day.id;
+          renderNav();
+          renderList();
+        };
+        nav.appendChild(btn);
+      });
+    }
+
+    function renderList() {
+      const data = getData();
+      const tasks = data[activeDay] || [];
+      const listEl = document.getElementById("task-list");
+      const emptyEl = document.getElementById("empty-state");
+
+      listEl.innerHTML = "";
+
+      if (tasks.length === 0) {
+        emptyEl.style.display = "block";
+      } else {
+        emptyEl.style.display = "none";
+      }
+
+      tasks.forEach((item, idx) => {
+        const row = document.createElement("div");
+        row.className = `task-item ${item.done ? "completed" : ""}`;
+
+        const tapTarget = document.createElement("div");
+        tapTarget.className = "tap-target";
+        tapTarget.onclick = () => toggleTask(idx);
+
+        const circle = document.createElement("div");
+        circle.className = "checkbox";
+        circle.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+        const txt = document.createElement("span");
+        txt.className = "task-text";
+        txt.textContent = item.title;
+
+        tapTarget.appendChild(circle);
+        tapTarget.appendChild(txt);
+
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "del-btn";
+        del.setAttribute("aria-label", "Sil");
+        del.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        `;
+        del.onclick = (e) => {
+          e.stopPropagation();
+          deleteTask(idx);
+        };
+
+        row.appendChild(tapTarget);
+        row.appendChild(del);
+        listEl.appendChild(row);
+      });
+
+      updateProgress(tasks);
+    }
+
+    function updateProgress(tasks) {
+      const bar = document.getElementById("progress-bar");
+      const val = document.getElementById("progress-val");
+
+      if (tasks.length === 0) {
+        bar.style.width = "0%";
+        val.textContent = "%0";
+        return;
+      }
+
+      const completed = tasks.filter(t => t.done).length;
+      const ratio = Math.round((completed / tasks.length) * 100);
+      bar.style.width = `${ratio}%`;
+      val.textContent = `${completed}/${tasks.length} (%${ratio})`;
+    }
+
+    function addTask() {
+      const input = document.getElementById("task-input");
+      const val = input.value.trim();
+      if (!val) return;
+
+      const data = getData();
+      if (!data[activeDay]) data[activeDay] = [];
+      data[activeDay].push({ title: val, done: false });
+
+      saveData(data);
+      input.value = "";
+      renderList();
+    }
+
+    function toggleTask(idx) {
+      const data = getData();
+      if (data[activeDay] && data[activeDay][idx]) {
+        data[activeDay][idx].done = !data[activeDay][idx].done;
+        saveData(data);
+        renderList();
+      }
+    }
+
+    function deleteTask(idx) {
+      const data = getData();
+      if (data[activeDay]) {
+        data[activeDay].splice(idx, 1);
+        saveData(data);
+        renderList();
+      }
+    }
+
+    initCountdown();
+    renderNav();
+    renderList();
+  </script>
+</body>
+</html>
